@@ -1,0 +1,122 @@
+<html>
+<head>
+	<title>Brush with D3 Test2</title>
+	<script src="https://d3js.org/d3.v3.js" charset="utf-8"></script>
+    <style type="text/css">
+        .selected {
+  fill: teal;
+  stroke: #2f225d;
+}
+        .clear-button {
+  font: 14px sans-serif;
+  cursor: pointer;
+}
+        body{background-color:#fafafa;font-family:'contantia, serif';}
+        #undated{width:400px;height:100px;padding:10px;overflow-y:scroll;overflow-x:hidden;position:fixed;bottom:20px;left:250px;}
+        #nav{position:fixed;background-color:#fafafa;width:100%;font-weight:bold;}
+        #legend{position:fixed;bottom:0px;left:0px;padding:5px;}
+        div.tooltip {
+  position: absolute;	
+  text-align: center;	
+  width: 200px;	
+  height: auto;		
+  padding: 2px;	
+  font: 12px sans-serif;	
+  background: lightsteelblue;	
+  border: 0px;					
+  border-radius: 8px;
+ /*  pointer-events: none;	This line needs to be removed */
+	
+}
+        
+.axis path {
+  
+}
+.axis text{margin-top:0px;}
+.axis line {
+  shape-rendering: crispEdges;
+  stroke: brown;
+  opacity:0.2;
+}
+         .brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+        
+        .rectclass{margin-right:5px;margin-bottom:1px;}  
+        #svg{border-style: solid;
+            border-width: 1px;
+            border-color: black;
+            background-color: #FFFFFF;
+            margin:0 auto;
+            overflow-x:scroll;
+            background-color:#fafafa;
+            margin-top:25px;
+            overflow:visible;
+            height:434px!important;
+        }
+       .clear-button {
+  font: 14px sans-serif;
+  cursor: pointer;
+}
+        .svg{overflow-x:scroll;}
+        
+        #container{text-align:center;width:1000px;margin: 0 20px;height:500px;}
+         path{fill: none;stroke: black;shape-rendering: crispEdges;}
+        .data{margin-left:1px;width:10px;}
+        .hatch {
+            background: 
+  /* On "top" */
+  repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    #ccc 10px,
+    #ccc 20px
+  ),
+  /* on "bottom" */
+  linear-gradient(
+    to bottom,
+    #eee,
+    #999
+  );
+      }
+    </style>
+    </head>
+    
+    <body>
+
+<defs>
+        <pattern id="pattern-stripe" width="4" height="4" patternunits="userSpaceOnUse" patterntransform="rotate(45)">
+          <rect width="2" height="4" transform="translate(0,0)" fill="white"></rect>
+        </pattern>
+        <mask id="mask-stripe">
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#pattern-stripe)">
+        </rect></mask>      
+      </defs>
+        
+    <div id="nav">
+    <input id="scores" type="checkbox"> Scores / Arrangements    
+    <input id="scol" type="checkbox"> In Special Collection    
+    <input id="pub" type="checkbox"> Published Scores / Arrangements 
+    <input id="plays" type="checkbox"> Plays 
+    <input id="films" type="checkbox"> Films 
+    <input id="radio" type="checkbox"> Radio Programmes 
+    </div>
+<div id="letters-div"></div>
+
+<div id="legend">
+    <!--<h3>Legend</h3>-->
+<span style="width:60px;height:10px;background-color:brown;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Default Project Colour <br>    
+<span style="width:60px;height:10px;background-color:silver;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Film <br>
+<span style="width:60px;height:10px;background-color:green;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Play <br>
+<span style="width:60px;height:10px;background-color:teal;border:1px solid black;margin-right:5px;display:inline-block;"></span> = In Collection <br>
+<span style="width:60px;height:10px;background-color:skyblue;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Radio Programme <br>
+<span style="width:60px;height:10px;background-color:orange;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Scores / Arrangements <br>
+</div>
+
+<!-- <div id="undated"></div> -->
+ 
+</body>
+</html>        

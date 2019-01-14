@@ -1,0 +1,1195 @@
+
+<head>
+	<title>Events</title>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="jquery.colorbox.js"></script> 
+    <script src="http://d3js.org/d3.v3.js"></script> 
+    <link rel="stylesheet" type="text/css" href="colorbox.css">
+	<!-- <script src="http://localhost/oriada/d3tutorials/timeline/d3/d3.v3.js"></script> -->
+    <style type="text/css">
+        .selected {
+  fill: teal;
+  stroke: #2f225d;
+}
+        .clear-button {
+  font: 14px sans-serif;
+  cursor: pointer;
+}
+        body{background-color:#fafafa;font-family:'contantia, serif';}
+        #undated{width:400px;height:100px;padding:10px;overflow-y:scroll;overflow-x:hidden;position:fixed;bottom:20px;left:250px;}
+        #nav{position:fixed;background-color:#fafafa;width:100%;font-weight:bold;}
+        #zoom{position:fixed;right:0px;font-weight:bold;margin-right:5px;}
+        #legend{position:fixed;bottom:0px;left:0px;padding:5px;}
+        div.tooltip {
+  position: absolute;	
+  text-align: center;	
+  width: 400px;	
+  height: auto;		
+  padding: 2px;	
+  font: 12px sans-serif;	
+  background: lightsteelblue;	
+  border: 5px solid lightsteelblue;					
+  border-radius: 8px;
+            height:100px;
+            padding:5px;
+            overflow-y:scroll;
+ /*  pointer-events: none;	This line needs to be removed */
+	
+}
+        
+.axis path {
+  
+}
+.axis text{margin-top:0px;}
+
+.axis line {
+  shape-rendering: crispEdges;
+  stroke: brown;
+  opacity:0.2;
+}
+         .brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+        
+        .rectclass{margin-right:5px;margin-bottom:1px;}  
+        #svg{border-style: solid;
+            border-width: 1px;
+            border-color: black;
+            background-color: #FFFFFF;
+            margin:0 auto;
+            overflow-x:scroll;
+            background-color:#fafafa;
+            /*margin-top:25px;*/
+            overflow:visible;
+            height:434px!important;
+        }
+       .clear-button {
+  font: 14px sans-serif;
+  cursor: pointer;
+}
+        .svg{overflow-x:scroll;}
+        
+        #container{text-align:center;width:1000px;margin: 0 20px;height:500px;}
+         path{fill: none;stroke: black;shape-rendering: crispEdges;}
+        .data{margin-left:1px;width:10px;}
+        .hatch {
+            background: 
+  /* On "top" */
+  repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    #ccc 10px,
+    #ccc 20px
+  ),
+  /* on "bottom" */
+  linear-gradient(
+    to bottom,
+    #eee,
+    #999
+  );
+      }
+        /*Gradient for Year Values / Unknown */
+        .stop-left {
+                stop-color: #fafafa;  /* Indigo */
+            }
+
+            .stop-right {
+                stop-color: brown;  /* Teal */
+            }
+            .stop-right2 {
+                stop-color: #707014;  /* Teal */
+            }
+            .stop-right3 {
+                stop-color: #663300;  /* DarkBrown */
+            }
+
+            .filled {
+                fill: url(#mainGradient);
+            }
+            .filled2 {
+                fill: url(#Gradient2);
+            }
+            .filled3 {
+                fill: url(#Gradient3);
+            }
+
+            .outlined {
+                fill:   none;
+                stroke: url(#mainGradient);
+                stroke-width: 4;
+            } 
+        .incollection {
+            border:1px solid black;
+  background-image: url("cross-out.png");
+  background-repeat: repeat;
+}
+        td, th {
+    padding: 1px 4px;
+}
+    </style>
+
+<script>
+    $(document).ready(function () {
+  
+ $(function ()
+    {
+        $("#active").colorbox({iframe:true, innerWidth:'100%', innerHeight:'100%', width:'100%', height:'100%', maxWidth:'100%', maxHeight:'100%'}); 
+     
+        //$("#active").colorbox({inline:true, href:'#active'});    
+     
+     
+    });
+        var removeTooltip;
+        function removeTooltip(){
+          console.log("ere");
+            //d3.selectAll('div.tooltip').remove();
+
+   }
+        
+        
+       
+});
+
+</script>     
+    
+</head>
+    
+    <body>
+
+<defs>
+  
+              
+      </defs>
+        
+    <div id="nav">
+    <input id="scores" type="checkbox"> Scores / Arrangement    
+    <input id="scol" type="checkbox" checked="checked"> In Special Collection    
+    <input id="pub" type="checkbox"> Published?
+    <input id="plays" type="checkbox"> Play 
+    <input id="films" type="checkbox"> Film 
+    <input id="radio" type="checkbox"> Radio Programme 
+    <input id="writing" type="checkbox"> Writing 
+    <input id="LP" type="checkbox"> LP 
+    </div>
+        
+    <div id="zoom">
+    <input id="zoom-select" type="checkbox"> Zoom In/Out      
+    </div>    
+    <script>
+
+var query = window.location.search.substring(1);
+
+console.log(query);
+        
+        
+d3.json("http://localhost/oriada/phpjson/ProjectsService/getAllProjects.php", function(data) { 
+ 
+
+    
+var height =  500;
+var tracks = [];    
+var band = {};
+var today = new Date();
+band.trackOffset = 4;
+band.h = height;
+yearMillis = 31622400000,
+instantOffset = 100 * yearMillis;    
+var items = data.projects; 
+
+ yScale = function (track) {
+     //return 4 + track;
+     return band.trackOffset + track * band.trackHeight;
+       };
+    
+function compareAscending(item1, item2) {
+            // Every item must have two fields: 'start' and 'end'.
+            var oneDay = 24*60*60*1000; // hours*minutes*seconds*milliseconds
+            var firstdatestart = new Date(item1.DateStart);
+            var seconddatestart = new Date(item2.DateStart);
+           // var result = Math.round(firstdatestart.getTime() - seconddatestart.getTime()/oneDay);
+            var result = firstdatestart.getTime() - seconddatestart.getTime();
+          
+    // earlier first
+            if (result < 0) { return -1; }
+            if (result > 0) { return 1; }
+            // longer first
+            var firstdatefinish = new Date(item1.DateFinish);
+            var seconddatefinish = new Date(item2.DateFinish);
+            var result = seconddatefinish.getTime() - firstdatefinish.getTime();
+   
+           // result = item2.DateFinish - item1.DateFinish;
+            if (result < 0) { return -1; }
+            if (result > 0) { return 1; }
+            return 0;
+        }
+
+function compareDescending(item1, item2) {
+            // Every item must have two fields: 'start' and 'end'.
+            // Read the dataset in and then compare the dates of the first value with the next value
+    
+            var firstdatestartdesc = item1.DateStart;
+            var seconddatestartdesc = item2.DateStart;
+            var oneDay = 24*60*60*1000; // hours*minutes*seconds*milliseconds
+
+    function parseDate(input) {
+  var parts = input.split('-');
+        
+  // new Date(year, month [, day [, hours[, minutes[, seconds[, ms]]]]])
+  return new Date(parts[0], parts[1]-1, parts[2]); // Note: months are 0-based
+}
+    
+            var result = parseDate(item1.DateStart) - parseDate(item2.DateStart);
+            if (result < 0) { return 1; }
+            if (result > 0) { return -1; }
+           
+    
+            // shorter first
+            var oneDay = 24*60*60*1000; // hours*minutes*seconds*milliseconds
+            var firstdatefinishdesc = item1.DateFinish;
+            var seconddatefinishdesc = item2.DateFinish;
+             
+
+              result = parseDate(item2.DateFinish) - parseDate(item1.DateFinish);
+            if (result < 0) { return 1; }
+            if (result > 0) { return -1; }
+            
+            return 0;
+        }
+   
+
+function calculateTracks(item, sortOrder, timeOrder) {
+            var i, track;
+
+            sortOrder = sortOrder || "descending"; // "ascending", "descending"
+            timeOrder = timeOrder || "backward";   // "forward", "backward"
+
+            function sortBackward() {
+                // older items end deeper (basically the next one will be underneath and sort them right to left)
+                data.projects.forEach(function (item) { // for each item as you loop through the tracks
+                    for (i = 0, track = 0; i < tracks.length; i++, track++) { //while we have a certain amount of tracks, add a new track
+                        if (item.DateFinish < tracks[i]) { break; } //jump out of the loop if the finish date of an item is less than the array tracks
+                                                         
+                    }
+                    item.track = track//record the track number for this item
+                    tracks[track] = item.DateStart;//record the starting date of this track
+                });
+            }
+            
+            //dont need to use this when we have sort backward instead
+            function sortForward() {
+                // younger items end deeper
+               data.projects.forEach(function (item) {
+                    for (i = 0, track = 0; i < tracks.length; i++, track++) {
+                        if (item.DateStart > tracks[i]) { break; }
+                    }
+                    item.track = track;
+                    tracks[track] = item.DateFinish;
+                });
+            }
+
+            if (sortOrder === "ascending")
+                data.projects.sort(compareAscending);
+            else
+                data.projects.sort(compareDescending);
+            if (timeOrder === "forward"){
+                ;
+                //sortForward();
+            }else{
+                sortBackward();
+            }
+        }
+
+    
+ calculateTracks(data.projects.item, "descending", "backward");
+//calculateTracks(data.projects.item, "ascending", "forward");
+//console.log(data.projects);
+data.nTracks = tracks.length;        
+band.trackHeight = Math.min((height - band.trackOffset) / data.nTracks, 60);     
+          
+// Parse the date / time
+var	parseDate = d3.time.format("%d-%b-%y").parse;
+var formatTime = d3.time.format("%e %B");// Format tooltip date / time
+    
+    
+// Define 'div' for tooltips
+var div = d3.select("body")
+	.append("div")  // declare the tooltip div 
+	.attr("class", "tooltip")              // apply the 'tooltip' class
+	.style("opacity", 0);                  // set the opacity to nil
+    
+    
+var svgwidth = 21060,
+    svgheight = 400,
+    padding = 100;
+        // create an svg container
+var imgUrl = "http://thedali.org/wp-content/uploads/2015/04/main_feature_image.png";
+    
+var vis = d3.select("body")
+//.append("div").attr("id", "container")
+    .append("svg:svg")
+
+    .attr("class", "svg")
+    .attr("width", svgwidth)
+    .attr("id", "svg")
+    .attr("height", svgheight);
+    
+
+     // Create the svg:defs element and the main gradient definition.
+            var svgDefs = vis.append('defs');
+
+            var mainGradient = svgDefs.append('linearGradient')
+                .attr('id', 'mainGradient');
+    
+            var Gradient2 = svgDefs.append('linearGradient')
+                .attr('id', 'Gradient2');
+        
+            var Gradient3 = svgDefs.append('linearGradient')
+                .attr('id', 'Gradient3');
+
+      var newsf = svgDefs.append("pattern")
+    .attr("id", "venus")
+    .attr('patternUnits', 'userSpaceOnUse')
+    .attr("width", 20)
+    .attr("height", 20)
+    .append("image")
+    .attr("xlink:href", imgUrl)
+    .attr("width", 20)
+    .attr("height", 20);
+    
+            // Create the stops of the main gradient. Each stop will be assigned
+            // a class to style the stop using CSS.
+            mainGradient.append('stop')
+                .attr('class', 'stop-left')
+                .attr('offset', '0');
+
+            mainGradient.append('stop')
+                .attr('class', 'stop-right')
+                .attr('offset', '1');
+    
+    
+            Gradient2.append('stop')
+                .attr('class', 'stop-left')
+                .attr('offset', '0');
+
+            Gradient2.append('stop')
+                .attr('class', 'stop-right2')
+                .attr('offset', '1');
+    
+    
+            Gradient3.append('stop')
+                .attr('class', 'stop-left')
+                .attr('offset', '0');
+    
+            Gradient3.append('stop')
+                .attr('class', 'stop-right3')
+                .attr('offset', '1');
+    
+// define the y scale  (vertical)
+//var yScale = d3.scale.linear();
+//.domain([0, 50])    // values between 0 and 100
+//.range([height - padding, padding]);   // map these to the chart height, less padding.      
+
+var mindate = new Date (1945,01,01),
+    maxdate = new Date (1972,12,31);
+    
+
+//define value for calculating position of rectangles    
+var x = d3.time.scale()
+        .domain([mindate, maxdate])  
+        .range([padding, svgwidth - padding * 2]);   // map these the the chart width = total width minus padding at both sides
+          
+    //var x = d3.time.scale().domain([0, width], 200);    
+var xScale = d3.time.scale()
+.domain([new Date(mindate), new Date(maxdate)])
+.range([padding, svgwidth - padding * 2]);   // map these the the chart width = total width minus padding at both sides
+
+
+
+
+    
+//document.domain = 'http://127.0.0.1:3267';  
+// define the y axis
+//var yAxis = d3.svg.axis()
+//    .orient("left")
+    
+//    .scale(yScale);
+// define the x axis
+var xAxis = d3.svg.axis()
+    .orient("bottom") 
+  
+    //.ticks(28)
+.ticks(d3.time.years)
+    //.attr("x2", 10)
+    .tickSize(4, 0)
+    //.tickValues([1959, 1960])
+//.style({ 'stroke': 'Black', 'fill': 'none', 'stroke-width': '3px'})
+    .scale(xScale);
+  
+var xAxis2 = vis.selectAll(".axis text")  
+            .attr("y", 10)   
+            .attr("style", "xa");   
+
+ 
+    
+
+    
+    //xAxis.tickformat(formatAsPercentage);
+            
+// draw y axis with labels and move in from the size by the amount of padding
+//vis.append("g")
+//    .attr("class", "yaxis")
+ //   .attr("transform", "translate("+padding+",0)")
+ //   .call(yAxis);
+
+
+// draw x axis with labels and move to the bottom of the chart area
+vis.append("g") 
+    .attr("class", "x axis")   // give it a class so it can be used to select only xaxis labels  below
+    //.attr("transform", "translate(0," + (svgheight - padding) + ")")
+    //.attr('class', 'axis')
+.attr("clip-path", "url(#clip)")
+    .call(xAxis);
+
+    var  x2 = d3.time.scale().range([0, svgwidth]);
+
+    band.parts = [],
+    band.instantWidth = 100; // arbitray value
+    
+    band.redraw = function (items) {
+        var items = vis.selectAll("g.rectclass, rect.seerect, text.rectclass");
+        items.attr("x", function (d) { return xScale(new Date(d.DateStart));})
+        items.attr("width", function (d) {
+                    return xScale(new Date(d.DateFinish)) - xScale(new Date(d.DateStart)); });
+       //x.domain(brush.extent());
+         //band.parts.forEach(function(part) { part.redraw(); }
+        //console.log(xScale);
+                           };
+    
+    
+    var brush = d3.svg.brush()
+    .x(xScale.range([0, svgwidth]))
+    
+            .on("brushend",endbrush)    
+            .on("brush", function() {
+                var domain = brush.empty()
+                    ? xScale.domain() 
+                    : brush.extent();
+                
+               
+                items.forEach(function(d) {
+                    xScale.domain(domain);
+                    band.redraw();
+                    
+                })
+            
+                ;
+            });
+    
+    
+var xAxis3 = d3.svg.axis()
+    .orient("bottom") 
+.ticks(d3.time.months, 1)
+        .tickFormat(d3.time.format('%b %Y'))
+        .tickSubdivide(12)
+// .ticks(d3.time.months)
+//.tickFormat(d3.time.format("%b %Y"))
+.tickSize(400)
+    .scale(xScale);
+    
+    
+   
+function endbrush(){
+        
+    vis.select(".x.axis")
+   .call(xAxis3)
+    
+    
+    //.selectAll("line").attr("y2", 400)
+    ;
+    
+    
+    //vis.call(xAxis);
+    //x.domain(brush.extent());
+    vis.selectAll(".point").attr('x', function(d) {return xScale(new Date(d.DateFinish))});
+     vis.selectAll("text").attr("y", 5);
+ 
+    get_button = d3.select(".clear-button");
+  if(get_button.empty() === true) {
+    clear_button = vis.append('text')
+      .attr("y", 20)
+      .attr("x", 15)
+      .attr("class", "clear-button")
+      .text("Clear Selection");
+  }
+
+ 
+  
+d3.select(".brush").call(brush.clear());
+    
+  clear_button.on('click', function(){
+    x.domain([0, 50]);
+      reset_axis();
+    clear_button.remove();
+  });
+}
+    
+    function transition_data() {
+  
+}
+
+    
+function reset_axis() {
+   x.domain([0, 21060]);
+    
+    var x2 = d3.time.scale()
+        .domain([mindate, maxdate])  
+        .range([padding, '21060' - padding * 2]);
+    
+   vis.transition().duration(500)
+   .select(".x.axis")
+   
+   .call(xAxis);
+}
+    
+//vis.append("g")
+// .attr("class", "x brush")
+// .call(brush)
+// .selectAll('rect')
+// .attr('height', height);
+ 
+vis.selectAll(".tick text")
+            .attr("y", 5);
+            
+   
+// now rotate text on x axis
+// solution based on idea here: https://groups.google.com/forum/?fromgroups#!topic/d3-js/heOBPQF3sAY
+// first move the text left so no longer centered on the tick
+// then rotate up to get 45 degrees.
+//vis.selectAll(".xaxis text")  // select all the text elements for the xaxis
+   // .attr("transform", function(d) {
+   //   return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
+//});
+    
+var barHeight = 20;
+var topPadding = 5;
+var sidePadding = 75;
+var yVal = function(d,i) { return 1; };
+var newValue2 = 2;
+
+d3.select("#scores").on("change", Scores);
+d3.select("#scol").on("change", SpecColl);
+d3.select("#pub").on("change", Pub);
+d3.select("#plays").on("change", Plays);
+d3.select("#films").on("change", Film);
+d3.select("#radio").on("change", Radio);
+d3.select("#writing").on("change", Writing);
+d3.select("#LP").on("change", LP);
+d3.select("#zoom-select").on("change", zoom);
+    
+    
+
+var see = vis.selectAll ("g.rectclass")
+   .data(data.projects)
+   .enter() 
+   .append("g")
+   .style("padding", 5)
+   .attr("y", function (d) { return yScale(d.track); })
+    .attr('width', function(d) { 
+    var calcdate = x(new Date(d.DateFinish)) - x(new Date(d.DateStart));
+    //console.log(calcdate);
+       
+   // var barWidth = data.projects.length;
+       //console.log(barWidth);
+       return calcdate;
+        //console.log("Calcdate value is: " +calcdate);
+    
+    if(calcdate<='0'){return 100}else{return 10}})
+   .attr("class", "rectclass")
+   .append("rect")
+.on("mouseover", function(d) {
+    
+     div.transition()
+				.duration(500)	
+				.style("opacity", 0)
+                .style("height",'auto')
+			div.transition()
+				//.duration(200)	
+            .style("z-index", 100)
+				.style("opacity", 1);	
+			div	.html(
+				"<strong>Project Type: </strong>" + d.TypeOfProject + "<br />" +
+                "<strong>Project Title: </strong><a href='http://localhost/oriada/d3tutorials/combined/scoreviewer.html' id='active' class='cboxElement' >" 
+                 + d.TitleOfProject +
+				"</a>" +                          // closing </a> tag
+                "<br />" +
+                "<strong>Publish/Performance/End Date: </strong>" + d.DateFinish + 
+                //'<a href= "http://google.com">' + // The first <a> tag
+				"<br />" +
+                
+				"<strong>Description: </strong>" + d.DescriptionOfProject +
+                "<br /><strong>Citation: </strong>" + d.Source1 + "<br />" + d.Source2 + "<br />" + d.Source3 +
+                "<br/>" 
+            )
+				//.style("left", (d3.event.pageX+15) + "px")			 
+				//.style("top", (d3.event.pageY - 10) + "px")
+    
+    
+               var nodeSelection = d3.select(this.nextSibling);
+                nodeSelection.style({opacity:'1'});
+                    //.text((function(d) {return d.TitleOfProject}))
+                    //.style("top", d[7] + "px")
+                    //.style("left", d[6] + "px")
+                   // .style("visibility", "visible");
+                })
+.on("mousemove", function(){
+               // div.transition().style("opacity", 0);
+                div.transition()
+                .style("z-index", 100)
+				.style("opacity", 1)
+				.style("left", (d3.event.pageX+15) + "px")			 
+				.style("top", (d3.event.pageY - 10) + "px")
+})
+
+           
+.on("mouseout", function(){
+               // div.transition().style("opacity", 0);
+                div.transition()
+				.duration(1800)	
+				.style("z-index", -100)
+                .style("visibility", "none");
+		
+            
+                var nodeSelection = d3.select(this.nextSibling);
+                nodeSelection.style({opacity:'0'});
+            })
+   .attr('width', function(d) { 
+    var calcdate = x(new Date(d.DateFinish)) - x(new Date(d.DateStart));
+    //console.log(calcdate);
+       
+   // var barWidth = data.projects.length;
+       //console.log(barWidth);
+       return calcdate;
+    
+    if(calcdate<='0'){return 100}else{return 10}})
+   .attr('x', function(d) {return x(new Date(d.DateStart))})
+//d3.time.format("%B %d, %Y")(d.DateFinish
+   .attr("height", 20)
+   .attr("margin-top", 5)
+   //.attr("y", collide(rect))
+   //.attr("y", function(d, i){ return i*2 + topPadding - 2 + 35;  })
+
+   .attr("y", function (d) {return yScale(d.track) +30;})
+
+ 
+   .attr("font-family", "sans-serif")
+.attr("fill", function (d) {
+
+  return 'brown';
+})
+
+.attr('class', function(d) { 
+    var calcdate = x(new Date(d.DateFinish)) - x(new Date(d.DateStart));
+    //return calcdate;
+   // console.log(calcdate);
+if(calcdate>'97'&&calcdate<'99'||calcdate>'738'&&calcdate<'745'||calcdate>'1257'&&calcdate<'1265'|| d.Accurate == 'Yes DF'){return 'filled'}else{return 'non'}});
+   //.text((function(d) {return d.TitleOfProject}))
+   
+
+ vis.selectAll("g.rectclass")
+   .append("text")
+ .style("opacity", 0)
+   .classed('data', true)
+   .attr('x', function(d) {return x(new Date(d.DateStart))})
+      //.attr("fill","#000")
+      .style("stroke-width", 1)
+      .style("text-anchor", "right")
+   .attr('x', function(d) {return x(new Date(d.DateStart))})
+   .attr("height", 20) 
+       //.attr("y", 5)
+  .attr("y", function (d) { return yScale(d.track) + 45; })
+//.attr("y", function(d, i){return i*2 + topPadding - 2 + 75;})
+ .attr('width', function(d) { if((d.DateStart>'')&& (d.DateFinish>'')){
+            var calcdateg = x(new Date(d.DateFinish)) - x(new Date(d.DateStart));
+            return calcdateg;
+            }else{return 10}})  
+    
+       .text((function(d) {//return d.TitleOfProject
+ })).each(wrap)
+       .attr("class","rectclass")
+ //.attr('width', rect.width)
+               
+         //.attr("padding", 10)    
+            ;
+
+
+
+if (scol.checked) {
+    specs = vis.selectAll("g.rectclass")
+    specs.selectAll("rect")
+    .filter(function(d) { return d.SpecColl === 'Yes'; })
+    //.attr("fill", "teal")
+    //.attr("class", "incollection")
+    .attr("stroke", "teal")
+    .attr("stroke-width", "5")
+    //.attr("fill-opacity","0.5");
+    
+    pubs = vis.selectAll("g.rectclass")
+    pubs.selectAll("rect")
+    .filter(function(d) { return d.SpecColl <= ''; })
+    .attr("fill", "#CD5C5C")
+    //.attr("opacity", "0.2")
+    }    
+    
+    
+    
+function Scores() {
+    if (this.checked) {
+    score = vis.selectAll("g.rectclass")
+    score.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Composition' || d.TypeOfProject === 'Arrangement'; })
+    //.attr("fill", "orange")
+     .attr("stroke", "teal")
+    .attr("stroke-width", "5")
+    .style("stroke-dasharray", ("5,0.5")) // make the stroke dashed
+    }else{
+    score.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Composition' || d.TypeOfProject === 'Arrangement'; })
+    .attr("fill", "brown") 
+    .style("stroke-dasharray", ("none")) // make the stroke dashed
+    }
+}
+    
+function SpecColl() {
+    if (scol.checked) {
+    specs = vis.selectAll("g.rectclass")
+    specs.selectAll("rect")
+    .filter(function(d) { return d.SpecColl === 'Yes'; })
+    //.attr("fill", "teal")
+    .attr("class", "incollection")
+    .attr("stroke", "teal")
+    .attr("stroke-width", "5")
+    }else{
+    specs.selectAll("rect")
+    .filter(function(d) { return d.SpecColl === 'Yes'; })
+    .attr("fill", "brown")    
+    }
+}
+function Pub() {
+    if (this.checked) {
+        
+
+        
+       
+        
+        
+        
+    pubs = vis.selectAll("g.rectclass")
+    //pubs.selectAll("rect")
+    .filter(function(d) { return d.Published > ''; })
+    
+   .append("text").text("\u00A9")
+    .attr('x', function(d) {return x(new Date(d.DateFinish)) - 15})
+   .attr("height", 20) 
+   .attr("width", 200) 
+       //.attr("y", 5)
+  .attr("y", function (d) { return yScale(d.track) + 45; })
+   //.append("g")
+   //.attr("id", "bg")
+   //.append("image")
+    .style("fill", "#fafafa")
+   //.attr("xlink:href", "cross-out.png")
+   //.attr("fill", "url('http://www.culturequest.us/irishmusic/revival_files/SeanORiada.gif')")    
+    //.attr("fill", "url(/#tile-ww)")
+    
+    
+    
+    
+        
+   // fill:url(#fillImage)
+    //.attr("fill", "#336699")
+    //.attr("opacity", "0.2")
+    }else if (this.unchecked){
+    pubs.selectAll("rect")
+    .filter(function(d) { return d.Published > ''; })
+    .attr("opacity", "1")    
+    }
+}    
+function Plays() {
+    if (this.checked) {
+    play = vis.selectAll("g.rectclass")
+    play.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Play'; })
+    .attr("fill", "#707014")
+    .filter(function(d) { return d.TypeOfProject === 'Play' && d.Accurate === 'Yes DF';})
+    .attr("class", "filled2")                   
+                      
+                         
+    }else{
+    play.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Play'; })
+    .attr("fill", "brown")    
+    }
+}    
+function Film() {
+    if (this.checked) {
+        
+        film = vis.selectAll("g.rectclass")
+        
+    //film.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Film' || d.TypeOfProject === 'Film Music'; })
+    //.attr("x", "0")
+    //.attr("y", "0")
+    //.attr("width", 20)
+    //.attr("height", 20)
+     .attr("fill", "url(#venus)")
+            //.attr("fill", "silver")
+     .append("text").text("Film").attr("fill", "#fafafa")
+    .attr('x', function(d) {return x(new Date(d.DateFinish)) - 45})
+   .attr("height", 20) 
+   .attr("width", 20) 
+       //.attr("y", 5)
+  .attr("y", function (d) { return yScale(d.track) + 45; })
+ 
+    //.style("fill", "#fafafa")
+    
+    }else{
+    film.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Film' || d.TypeOfProject === 'Film Music'; })
+    .attr("fill", "brown")    
+    }
+}        
+function Radio() {
+    if (this.checked) {
+    radio = vis.selectAll("g.rectclass")
+    //radio.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Radio Programme'; })
+    //.attr("fill", "skyblue")
+    
+    
+     .append("text").text("Radio").attr("fill", "#fafafa")
+    .attr('x', function(d) {return x(new Date(d.DateFinish)) - 45})
+   .attr("height", 20) 
+   .attr("width", 20) 
+       //.attr("y", 5)
+  .attr("y", function (d) { return yScale(d.track) + 45; })
+    
+    }else{
+    radio.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Radio Programme'; })
+    .attr("fill", "brown")    
+    }
+}     
+
+function Writing() {
+    if (this.checked) {
+    writing = vis.selectAll("g.rectclass")
+    //writing.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Writing' || d.DescriptionOfProject === 'Lyrics and Music' || d.DescriptionOfProject === 'Lyrics' || d.ExtraRole === 'Writing'; })
+    
+       .append("text").text("W").attr("fill", "#fafafa")
+    .attr('x', function(d) {return x(new Date(d.DateFinish)) - 45})
+   .attr("height", 20) 
+   .attr("width", 20) 
+       //.attr("y", 5)
+  .attr("y", function (d) { return yScale(d.track) + 45; })
+    
+    }else{
+    writing.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Writing'; })
+    .attr("fill", "black")    
+    }
+}
+function LP() {
+    if (this.checked) {
+    LP = vis.selectAll("g.rectclass")
+    LP.selectAll("rect")
+    //writing.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'LP' || d.TypeOfProject === 'EP'; })
+    .attr("class", "filled3") 
+    
+    
+    }else{
+    writing.selectAll("rect")
+    .filter(function(d) { return d.TypeOfProject === 'Writing'; })
+    .attr("fill", "black")    
+    }
+}    
+    //make zoom happen    
+function zoom() {
+    if (this.checked) {
+        var newwidth = d3.select("svg")
+	.style("width", "21060");
+        var newwidth2 = d3.select(".x axis")
+	.style("width", "21060");
+        
+    
+                           
+         
+               
+              
+    
+    }else{
+    var newwidth = d3.select("svg")
+	.style("width", "3060");
+        var newwidth2 = d3.select(".x axis")
+	.style("width", "3060");
+        
+    }
+}
+    
+    
+    
+    
+    
+    
+   function wrap(d) {
+               
+
+        var self = d3.select(this),
+            textLength = self.node().getComputedTextLength(),
+            //rectLength = d3.select("rect").node().getBoundingClientRect(),
+              rectLength = d3.select("rect").node().getBoundingClientRect(),
+          
+            text = self.text();
+        
+       //console.log("Text computed length:" + textLength);
+      // console.log("Rectangle width: " + rectLength.width);
+       
+       
+       
+        //while (textLength > rectLength.width && textLength > 0) {
+            //console.log("bigger");
+           // text = text.slice(0, -1);
+           // self.text(text + '...');
+           // textLength = self.node().getComputedTextLength();
+            
+        //}
+        if(textLength<100){
+           // console.log("smaller");
+           // textLength = 10;     
+            //console.log(d.TitleOfProject);
+            //console.log("width is now" +textLength);
+           
+        }
+    } 
+
+    
+//brush stuff
+
+    
+
+
+vis.append("defs").append("clipPath")
+    .attr("id", "clip")
+    .append("rect")
+    .attr("width", 21060)
+    .attr("height", 500);    
+        
+
+
+      
+    
+    
+d3.json("http://localhost/oriada/phpjson/LetterService/getAllLetters.php", function(data) {
+    
+    var letters = vis.selectAll("div#nav")
+   .data(data.letters)
+   .enter()
+   .append("rect")
+   .attr('class', "new")
+   .attr('x', function(d) {return x(new Date(d.DateFinish))})
+   .attr("width", 5)
+   .attr("clip-path", "url(#clip)")
+   .attr("class", "rectclass point")
+   .attr("fill", "gold")
+   .attr("stroke", "brown")
+   .attr("y", 434)
+   
+   //.style("bottom", 0)
+    .attr("height", 20)
+   .text((function(d) {return d.DateFinish} )) 
+    
+    .on("mouseover", function(d) {
+    
+     div.transition()
+				.duration(500)	
+				.style("opacity", 0)
+                .style("height",'auto')
+			div.transition()
+				.duration(200)	
+            .style("z-index", 100)
+				.style("opacity", 1);	
+			div	.html(
+               "<strong>Letter Date: </strong>" + d.DateFinish +
+                "<br />" +
+				//'<a href= "http://google.com">' + // The first <a> tag
+				
+                "<strong>Letter Description: </strong>" + d.Description +
+				"</a>" +                          // closing </a> tag
+				"<br/>"  )	 
+				.style("left", (d3.event.pageX) + "px")			 
+				.style("top", (d3.event.pageY - 28) + "px")
+    
+    
+               var nodeSelection = d3.select(this.nextSibling);
+                nodeSelection.style({opacity:'1'});
+                    //.text((function(d) {return d.TitleOfProject}))
+                    //.style("top", d[7] + "px")
+                    //.style("left", d[6] + "px")
+                   // .style("visibility", "visible");
+                })
+    //console.log(data);
+    
+    
+});
+    d3.json("http://localhost/oriada/phpjson/EventService/getAllEvents.php", function(data) {
+    
+    var letters = vis.selectAll("div#nav")
+   .data(data.events)
+   .enter()
+   .append("rect")
+   .attr('class', "new")
+   .attr('x', function(d) {return x(new Date(d.DateFinish))})
+    .attr('x', function(d) {return x(new Date(d.DateStart))})
+   .attr("width", 5)
+   .attr("clip-path", "url(#clip)")
+   .attr("class", "rectclass point")
+    
+    .attr("fill", function(d) { if(d.EventType=='Performance'){return 'white'}else if(d.EventType!='Performance'){ return 'teal' }}) 
+
+   // .filter(function(d) { return d.EventType === 'Performance'; })
+    //.attr("fill", "teal") 
+   
+   .attr("stroke", "brown")
+   //.attr("y", 414)
+   .attr("y", function(d) { if(d.EventType=='Performance'){return 424}else if(d.EventType!='Performance'){ return 414 }}) 
+   //.style("bottom", 0)
+    //.attr("height", 20)
+    .attr("height", function(d) { if(d.EventType=='Performance'){return 10}else if(d.EventType!='Performance'){ return 20 }}) 
+   .text((function(d) {return d.DateFinish} )) 
+    
+    .on("mouseover", function(d) {
+    
+     div.transition()
+				.duration(500)	
+				.style("opacity", 0)
+                .style("height",'auto')
+			div.transition()
+				.duration(200)	
+            .style("z-index", 100)
+				.style("opacity", .9);	
+			div	.html(
+               "<strong>Event Date: </strong>" +
+                d.DateFinish +
+                "<br />" +
+                "<strong>Event Type: </strong>" +
+                d.EventType +
+                "<br />" +
+				//'<a href= "http://google.com">' + // The first <a> tag
+				
+                d.Description +
+				"</a>" +                          // closing </a> tag
+				"<br/>"  )	 
+				.style("left", (d3.event.pageX) + "px")			 
+				.style("top", (d3.event.pageY - 28) + "px")
+    
+    
+               var nodeSelection = d3.select(this.nextSibling);
+                nodeSelection.style({opacity:'1'});
+                    //.text((function(d) {return d.TitleOfProject}))
+                    //.style("top", d[7] + "px")
+                    //.style("left", d[6] + "px")
+                   // .style("visibility", "visible");
+                })
+    //console.log(data);
+    
+    
+});
+
+
+     });
+
+        
+        //now import letters
+
+
+
+</script>
+
+<div id="letters-div"></div>
+
+<div id="legend">
+    <a href='http://localhost/oriada/d3tutorials/combined/scoreviewer.html' id='active'></a>
+    <!--<h3>Legend</h3>-->
+<span style="width:60px;height:10px;background-color:brown;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Default Project Colour <br>    
+<span style="width:60px;height:10px;background-color:silver;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Film <br>
+<span style="width:60px;height:10px;background-color:green;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Play <br>
+<span style="width:60px;height:10px;background-color:teal;border:1px solid black;margin-right:5px;display:inline-block;"></span> = In Collection <br>
+<span style="width:60px;height:10px;background-color:skyblue;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Radio Programme <br>
+<span style="width:60px;height:10px;background-color:orange;border:1px solid black;margin-right:5px;display:inline-block;"></span> = Scores / Arrangements <br>
+        </div>
+
+        <table id="t1">
+    <thead>
+        <tr><th>Name<th>Age
+    </thead>
+</table>
+            
+<script>
+d3.json("http://localhost/oriada/phpjson/ProjectsService/getUndatedProjects.php", function(data) { 
+var orig = data.projects;
+    
+    //var people = orig.filter(function(d) { return (d.DateStart <= '1960-01-30' && d.DateFinish >= '1959-01-30') });
+    var people = orig;
+    //console.log(people);
+    function tabulate(data, columns) {
+    var table = d3.select("#t1");
+    table.select('tbody').remove();
+	var tbody = table.append('tbody').attr("style", "position:fixed;right:0;bottom:0;width:500px;margin:5px;height:110px;background-color:#fafafa;overflow-y:auto;border:2px solid brown;");
+    var th = tbody.append('span').text("Music Projects Without Dates").attr("width", "500px").style("font-weight","bold");
+    data.forEach(function(row) {
+        var tr = tbody.append('tr');
+        columns.forEach(function(column) {
+           tr.append('td').text(row[column]);
+        });
+    });
+    return table;
+}
+
+// create some people
+var people2 = [
+    {name: "Jill", age: 30},
+    {name: "Bob", age: 32},
+    {name: "George", age: 29},
+    {name: "Sally", age: 31}
+];
+
+// render the table
+var peopleTable = tabulate(people, "id TitleOfProject DescriptionOfProject".split(' '));
+
+// sort by age
+peopleTable.selectAll("tbody tr")
+    .sort(function(d, b) {
+        return d3(d.id, d.TitleOfProject, d.DescriptionOfProject); });
+ 
+
+  
+});
+
+    
+            </script> 
+            
+                       
+<script type="text/javascript">
+window.onload=setTimeout("moveme()", 1000);
+//window.onload = setTimeout("window.print()", 1000); 
+function moveme() {
+    
+    window.scrollTo(10500, 0);
+}
+</script>
+</body>
+</html>
